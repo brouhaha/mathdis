@@ -2,20 +2,23 @@
  * mathdis.c: Atari math box microcode disassembler for Red Baron,
  *            Battlezone, and Tempest
  *
- * Copyright 1992, 1993, 1997, 2019 Eric Smith
- *
- * Permission is granted to reproduce and distribute copies of this program
- * for noncommercial use, provided the copyright notice is not altered.
- * This software is provided on an "AS-IS" basis, with no warranty.
- *
- * The input file should be a series of 256 lines each containing the
- * address and data (in hexadecimal, separated by whitespace) for one
- * microcode ROM word.  For instance: "000  001700"
- *
  * To have any hope of understanding the disassembly, you'd better have the
  * math box schematics, a 2901 data sheet, and a lot of patience.
  *
- * $Header: /usr2/eric/vg/atari/mathbox/RCS/mathdis.c,v 1.5 1997/01/12 03:40:05 eric Exp eric $
+ * Copyright 1992, 1993, 1997, 2019 Eric Smith
+ * SPDX-License-Identifier: GPL-3.0
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of version 3 of the GNU General Public License
+ * as published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <stdarg.h>

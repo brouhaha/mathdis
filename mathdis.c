@@ -2,7 +2,7 @@
  * mathdis.c: Atari math box microcode disassembler for Red Baron,
  *            Battlezone, and Tempest
  *
- * Copyright 1992, 1993, 1997 Eric Smith
+ * Copyright 1992, 1993, 1997, 2019 Eric Smith
  *
  * Permission is granted to reproduce and distribute copies of this program
  * for noncommercial use, provided the copyright notice is not altered.
@@ -18,12 +18,15 @@
  * $Header: /usr2/eric/vg/atari/mathbox/RCS/mathdis.c,v 1.5 1997/01/12 03:40:05 eric Exp eric $
  */
 
-#include <stdio.h>
 #include <stdarg.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 #define I_MAX 256
 
-unsigned long instruction [I_MAX];
+uint32_t instruction [I_MAX];
 int entry [I_MAX];
 
 char *progname;
@@ -51,34 +54,56 @@ void fatal (int retval, char *fmt, ...)
 
 #define BUFSIZE 80
 
-void read_inst (FILE *f)
+
+const char *dispatch_rom_fn = "036174-01.b1";
+
+const char *ucode_rom_fn[] =
 {
-  int addr;
-  int addr2;
-  unsigned long val;
-  char buffer [BUFSIZE];
+  "036175-01.m1",
+  "036176-01.l1",
+  "036177-01.k1",
+  "036178-01.j1",
+  "036179-01.h1",
+  "036180-01.f1",
+};
 
-  for (addr = 0; addr < I_MAX; addr++)
+
+void read_inst (void)
+{
+  FILE *f;
+
+  for (int addr = 0; addr < I_MAX; addr++)
+  {
     entry [addr] = -1;
+    instruction [addr] = 0;
+  }
 
-  addr = 0;
-  while (addr < I_MAX)
+  f = fopen(dispatch_rom_fn, "rb");
+  if (! f)
+    fatal(2, "error opening dispatch ROM\n");
+  for (int i = 0; i < 32; i++)
+  {
+    uint8_t d;
+    if (1 != fread(& d, sizeof(d), 1, f))
+      fatal(3, "error reading dispath ROM\n");
+    entry[d] = i;
+  }
+  fclose(f);
+
+  for (int i = 0; i < sizeof(ucode_rom_fn) / sizeof(char *); i++)
+  {
+    f = fopen(ucode_rom_fn[i], "rb");
+    if (! f)
+      fatal(2, "error opening microcode ROM %s\n", ucode_rom_fn[i]);
+    for (int j = 0; j < 256; j++)
     {
-      if (fgets (buffer, BUFSIZE, f) == NULL)
-	fatal (2, "error reading object file\n");
-      if (strncmp (buffer, "Entry", 5) == 0)
-	{
-	  sscanf (buffer + 6, "%x", & addr2);
-	  entry [addr] = addr2;
-	  continue;
-	}
-      if (strspn (buffer, "0123456789abcdef") != 3)
-	continue;
-      sscanf (buffer, "%x %x", & addr2, & val);
-      if (addr2 != addr)
-	fatal (3, "expected addr %02x, got %02x\n", addr, addr2);
-      instruction [addr++] = val;
+      uint8_t d;
+      if (1 != fread(& d, sizeof(d), 1, f))
+        fatal(3, "error reading dispath ROM\n");
+      instruction[j] |= d << (i * 4);
     }
+    fclose(f);
+  }
 }
 
 void dis_fcn (FILE *file, int f, int s, int a, int b, int c)
@@ -282,36 +307,13 @@ void disassemble_all (FILE *f)
     }
 }
 
+
 int main (int argc, char *argv[])
 {
-  FILE *infile = stdin;
   FILE *outfile = stdout;
   char *fn;
   progname = argv [0];
-  switch (argc)
-    {
-    case 3:
-      fn = argv [2];
-      if (strcmp (fn, "-"))
-	{
-	  outfile = fopen (fn, "w");
-	  if (! outfile)
-	    fatal (2, "error opening output file\n");
-	}
-    case 2:
-      fn = argv [1];
-      if (strcmp (fn, "-"))
-	{
-	  infile = fopen (fn, "r");
-	  if (! infile)
-	    fatal (2, "error opening input file\n");
-	}
-    case 1:
-      break;
-    default:
-      fatal (1, "");
-    }
-  read_inst (infile);
+  read_inst ();
   disassemble_all (outfile);
   return (0);
 }
